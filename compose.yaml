@@ -5,11 +5,16 @@ services:
       dockerfile: Dockerfile
     environment:
       API_ADDRESS: ":8080"
-      DATA_FILE: /app/data/store.json
+      POSTGRES_HOST: host.docker.internal
+      POSTGRES_PORT: "${POSTGRES_PORT:-5432}"
+      POSTGRES_USER: "${POSTGRES_USER:-postgres}"
+      POSTGRES_PASSWORD: "${POSTGRES_PASSWORD:?Define POSTGRES_PASSWORD with the existing PostgreSQL container password}"
+      POSTGRES_DB: "${POSTGRES_DB:-postgres}"
+      POSTGRES_SSLMODE: "${POSTGRES_SSLMODE:-disable}"
     ports:
       - "8080:8080"
-    volumes:
-      - ./backend/data:/app/data
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
     restart: unless-stopped
     healthcheck:
       test: ["CMD", "wget", "-q", "-O", "/dev/null", "http://127.0.0.1:8080/api/health"]

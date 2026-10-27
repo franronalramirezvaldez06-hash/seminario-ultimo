@@ -57,3 +57,18 @@ export interface SaleResult {
   subtotal: number;
   totalDiscount: number;
 }
+
+export interface DashboardSummary {
+  totalProducts: number;
+  expiredProducts: number;
+  expiredUnits: number;
+  expiringProducts: number;
+  expiringUnits: number;
+  todaySaleCount: number;
+  todaySalesTotal: number;
+  salesPerDay: Array<{
+    date: string;
+    saleCount: number;
+    totalPaid: number;
+  }>;
+}

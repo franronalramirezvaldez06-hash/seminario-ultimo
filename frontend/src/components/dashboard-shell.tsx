@@ -6,6 +6,7 @@ import { type FormEvent, type ReactNode, useState } from "react";
 import { createProduct, notifyInventoryChanged } from "@/lib/api";
 
 const navigation = [
+  { href: "/resumen", label: "Resumen", icon: "▤" },
   { href: "/", label: "Inventario", icon: "▦" },
   { href: "/pos", label: "POS / Caja", icon: "▣" },
   { href: "/mermas", label: "Mermas", icon: "↘" },

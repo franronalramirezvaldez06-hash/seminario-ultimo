@@ -1,5 +1,6 @@
 import type {
   ExpiringLot,
+  DashboardSummary,
   InventoryProduct,
   Lot,
   Product,
@@ -73,6 +74,37 @@ export async function getInventory(): Promise<InventoryProduct[]> {
     activeLots: row.lotes_activos,
     nextExpiry: row.proximo_vencimiento,
   }));
+}
+
+export async function getDashboardSummary(): Promise<DashboardSummary> {
+  const result = await request<{
+    productos_total: number;
+    productos_vencidos: number;
+    unidades_vencidas: number;
+    productos_por_vencer: number;
+    unidades_por_vencer: number;
+    ventas_hoy: number;
+    total_ventas_hoy: number | string;
+    ventas_por_dia: Array<{
+      fecha: string;
+      cantidad_ventas: number;
+      total_ventas: number | string;
+    }>;
+  }>("/resumen");
+  return {
+    totalProducts: result.productos_total,
+    expiredProducts: result.productos_vencidos,
+    expiredUnits: result.unidades_vencidas,
+    expiringProducts: result.productos_por_vencer,
+    expiringUnits: result.unidades_por_vencer,
+    todaySaleCount: result.ventas_hoy,
+    todaySalesTotal: Number(result.total_ventas_hoy),
+    salesPerDay: result.ventas_por_dia.map((day) => ({
+      date: day.fecha,
+      saleCount: day.cantidad_ventas,
+      totalPaid: Number(day.total_ventas),
+    })),
+  };
 }
 
 export async function createProduct(input: {

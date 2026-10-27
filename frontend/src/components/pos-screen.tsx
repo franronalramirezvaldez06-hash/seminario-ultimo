@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState, type FormEvent } from "react";
-import { createSale, getFEFOLot, getProducts, notifyInventoryChanged } from "@/lib/api";
+import { createSale, getFEFOLot, getInventory, getProducts, notifyInventoryChanged } from "@/lib/api";
 import { formatCurrency, formatDate } from "@/lib/format";
 import type { Lot, Product } from "@/lib/types";
 
@@ -27,23 +27,92 @@ export function POSScreen() {
   const [error, setError] = useState(false);
 
   useEffect(() => {
-    getProducts().then(setProducts).catch((reason: unknown) => {
-      setMessage(reason instanceof Error ? reason.message : "No se pudo cargar el catálogo.");
-      setError(true);
-    }).finally(() => setLoading(false));
-    const onInventoryUpdate = () => {
-      getProducts().then(setProducts).catch((reason: unknown) => {
-        setMessage(reason instanceof Error ? reason.message : "No se pudo actualizar el catálogo.");
+    const loadProducts = async () => {
+      try {
+        const [catalog, inventory] = await Promise.all([getProducts(), getInventory()]);
+        const availableProducts = catalog.filter((product) => {
+          const stock = inventory.find((item) => item.id === product.id)?.available ?? 0;
+          return stock > 0;
+        });
+        setProducts(availableProducts);
+        if (productId && !availableProducts.some((product) => String(product.id) === productId)) {
+          setProductId("");
+          setLastLot(null);
+        }
+      } catch (reason) {
+        setMessage(reason instanceof Error ? reason.message : "No se pudo cargar el catálogo.");
         setError(true);
-      });
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    void loadProducts();
+    const onInventoryUpdate = () => {
+      setLoading(true);
+      void loadProducts();
     };
     window.addEventListener("inventory-updated", onInventoryUpdate);
     return () => window.removeEventListener("inventory-updated", onInventoryUpdate);
-  }, []);
+  }, [productId]);
+
+  const selectedProduct = useMemo(
+    () => products.find((item) => item.id === Number(productId)) ?? null,
+    [productId, products],
+  );
+
+  const inCartForSelection = useMemo(() => {
+    if (!lastLot) return 0;
+    return cart.filter((item) => item.barcode === lastLot.barcode).reduce((sum, item) => sum + item.quantity, 0);
+  }, [cart, lastLot]);
+
+  const availableForSelection = useMemo(() => {
+    if (!lastLot) return 0;
+    return Math.max(0, lastLot.available - inCartForSelection);
+  }, [inCartForSelection, lastLot]);
+
+  const canAddSelection = Boolean(selectedProduct) && availableForSelection > 0;
+  const quantityLimit = availableForSelection > 0 ? availableForSelection : 1;
 
   const subtotal = useMemo(() => cart.reduce((sum, item) => sum + item.regularPrice * item.quantity, 0), [cart]);
   const discount = useMemo(() => cart.reduce((sum, item) => sum + (item.regularPrice - item.price) * item.quantity, 0), [cart]);
   const total = useMemo(() => cart.reduce((sum, item) => sum + item.price * item.quantity, 0), [cart]);
+
+  useEffect(() => {
+    if (!selectedProduct) {
+      setLastLot(null);
+      setQuantity(1);
+      return;
+    }
+
+    let cancelled = false;
+    const refreshSelectedLot = async () => {
+      try {
+        const lot = await getFEFOLot(selectedProduct.barcode);
+        if (!cancelled) {
+          setLastLot(lot);
+          if (lot.available <= 0) {
+            setQuantity(1);
+          }
+        }
+      } catch (reason) {
+        if (!cancelled) {
+          setLastLot(null);
+          if (reason instanceof Error) {
+            setMessage(reason.message);
+          } else {
+            setMessage("No hay un lote disponible.");
+          }
+          setError(true);
+        }
+      }
+    };
+
+    void refreshSelectedLot();
+    return () => {
+      cancelled = true;
+    };
+  }, [selectedProduct]);
 
   async function findLot(): Promise<Lot | null> {
     const product = products.find((item) => item.id === Number(productId));
@@ -74,8 +143,8 @@ export function POSScreen() {
     const lot = await findLot();
     if (!lot) return;
     const inCart = cart.filter((item) => item.barcode === lot.barcode).reduce((sum, item) => sum + item.quantity, 0);
-    if (quantity > lot.available - inCart) {
-      setMessage(`Solo puedes agregar ${Math.max(0, lot.available - inCart)} unidad(es) más de este lote.`);
+    if (lot.available <= 0 || quantity > lot.available - inCart) {
+      setMessage(`No hay stock disponible para ${lot.name}. Disponibles: ${Math.max(0, lot.available - inCart)}.`);
       setError(true);
       return;
     }
@@ -153,13 +222,43 @@ export function POSScreen() {
               </div>
               <div className="field quantity-field">
                 <label htmlFor="pos-quantity">Cantidad</label>
-                <input id="pos-quantity" type="number" min="1" step="1" value={quantity} onChange={(event) => setQuantity(Number(event.target.value))} required />
+                <input
+                  id="pos-quantity"
+                  type="number"
+                  min="1"
+                  step="1"
+                  max={quantityLimit}
+                  value={quantity}
+                  disabled={!selectedProduct || availableForSelection <= 0}
+                  onChange={(event) => {
+                    const nextValue = Number(event.target.value);
+                    if (!Number.isFinite(nextValue) || nextValue < 1) {
+                      setQuantity(1);
+                      return;
+                    }
+                    const maxQuantity = availableForSelection > 0 ? availableForSelection : 1;
+                    setQuantity(Math.min(Math.max(1, nextValue), maxQuantity));
+                  }}
+                  required
+                />
               </div>
-              <button className="secondary-button" type="button" disabled={loading || !products.length} onClick={() => void findLot()}>Consultar stock</button>
-              <button className="primary-button" type="submit" disabled={loading || !products.length}>Agregar al carrito <span>+</span></button>
+              <button className="secondary-button" type="button" disabled={loading || !products.length || !selectedProduct} onClick={() => void findLot()}>Consultar stock</button>
+              <button className="primary-button" type="submit" disabled={loading || !products.length || !canAddSelection}>Agregar al carrito <span>+</span></button>
             </form>
             <p className="form-hint">Selecciona un producto y una cantidad. Repite para agregar otros productos a la misma compra.</p>
-            {lastLot && <div className="lot-info"><span className="lot-info-icon">i</span><p><strong>{lastLot.name} · {lastLot.number}</strong><span>{lastLot.available} unidades disponibles · Vence {formatDate(lastLot.expiresAt)}</span></p></div>}
+            {lastLot && (
+              <div className="lot-info">
+                <span className="lot-info-icon">i</span>
+                <p>
+                  <strong>{lastLot.name} · {lastLot.number}</strong>
+                  <span>
+                    {availableForSelection > 0
+                      ? `${availableForSelection} unidades disponibles · Vence ${formatDate(lastLot.expiresAt)}`
+                      : `Sin stock disponible · Vence ${formatDate(lastLot.expiresAt)}`}
+                  </span>
+                </p>
+              </div>
+            )}
           </section>
 
           <section className="cart-section">

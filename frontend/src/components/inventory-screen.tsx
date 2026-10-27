@@ -5,12 +5,6 @@ import { getInventory, getProducts, receiveLot } from "@/lib/api";
 import { formatCurrency, formatDate } from "@/lib/format";
 import type { InventoryProduct, Product } from "@/lib/types";
 
-function daysFromNow(days: number): string {
-  const date = new Date();
-  date.setDate(date.getDate() + days);
-  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
-}
-
 export function InventoryScreen() {
   const [products, setProducts] = useState<Product[]>([]);
   const [inventory, setInventory] = useState<InventoryProduct[]>([]);
@@ -19,7 +13,7 @@ export function InventoryScreen() {
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState("");
   const [error, setError] = useState(false);
-  const [expiry, setExpiry] = useState(daysFromNow(3));
+  const [expiry, setExpiry] = useState("");
 
   const loadInventory = useCallback(() => Promise.all([getProducts(), getInventory()]), []);
   const applyInventory = useCallback(([catalog, stock]: [Product[], InventoryProduct[]]) => {
@@ -80,7 +74,7 @@ export function InventoryScreen() {
       setMessage("Lote registrado correctamente.");
       setError(false);
       form.reset();
-      setExpiry(daysFromNow(3));
+      setExpiry("");
       await refresh();
     } catch (reason) {
       setMessage(reason instanceof Error ? reason.message : "No se pudo registrar el lote.");
@@ -126,16 +120,6 @@ export function InventoryScreen() {
               <input id="lot-expiry" name="expiry" type="date" value={expiry} onChange={(event) => setExpiry(event.target.value)} required />
             </div>
           </div>
-          <fieldset className="shortcuts">
-            <legend>Atajos de vencimiento</legend>
-            <div className="shortcut-row">
-              {[["+3 días", 3], ["+15 días", 15], ["+30 días", 30], ["+180 días", 180]].map(([label, days]) => (
-                <button className="shortcut-chip" key={label} type="button" onClick={() => setExpiry(daysFromNow(Number(days)))}>
-                  <span className="chip-days">{label}</span>
-                </button>
-              ))}
-            </div>
-          </fieldset>
           <div className="form-actions"><span className="required-note"><span className="required-mark">*</span> Campos obligatorios</span><button className="primary-button save-button" type="submit" disabled={saving || !products.length}>{saving ? "Guardando…" : "Guardar lote"} <span>→</span></button></div>
         </form>
         {message && <p className={`message${error ? " message-error" : ""}`} role={error ? "alert" : "status"}>{message}</p>}
