@@ -1,0 +1,130 @@
+{
+  "productos": [
+    {
+      "id": 1,
+      "codigo_barras": "7501234567890",
+      "nombre": "Leche Entera 1L",
+      "precio_regular": 3200.0,
+      "creado_en": "2026-01-01T00:00:00"
+    },
+    {
+      "id": 2,
+      "codigo_barras": "7509876543210",
+      "nombre": "Pan Integral",
+      "precio_regular": 1400.0,
+      "creado_en": "2026-01-02T00:00:00"
+    },
+    {
+      "id": 3,
+      "codigo_barras": "7501112223334",
+      "nombre": "Salami",
+      "precio_regular": 4800.0,
+      "creado_en": "2026-01-03T00:00:00"
+    },
+    {
+      "id": 4,
+      "codigo_barras": "MINI-00000004",
+      "nombre": "coc",
+      "precio_regular": 0.03,
+      "categoria": "General",
+      "creado_en": "2026-10-22T16:12:57.498920"
+    }
+  ],
+  "lotes": [
+    {
+      "id": 1,
+      "producto_id": 1,
+      "numero_lote": "LOT-LECHE-001",
+      "cantidad_disponible": 5,
+      "fecha_vencimiento": "2026-10-25T00:00:00",
+      "fecha_ingreso": "2026-10-20T00:00:00"
+    },
+    {
+      "id": 2,
+      "producto_id": 2,
+      "numero_lote": "LOT-PAN-001",
+      "cantidad_disponible": 4,
+      "fecha_vencimiento": "2026-10-26T00:00:00",
+      "fecha_ingreso": "2026-10-20T00:00:00"
+    },
+    {
+      "id": 3,
+      "producto_id": 1,
+      "numero_lote": "LOT-1-20261022160907",
+      "cantidad_disponible": 1,
+      "fecha_vencimiento": "2026-10-25T00:00:00",
+      "fecha_ingreso": "2026-10-22T16:09:07.896659"
+    },
+    {
+      "id": 4,
+      "producto_id": 3,
+      "numero_lote": "LOT-3-20261022161246",
+      "cantidad_disponible": 1,
+      "fecha_vencimiento": "2026-10-25T00:00:00",
+      "fecha_ingreso": "2026-10-22T16:12:46.929380"
+    },
+    {
+      "id": 5,
+      "producto_id": 4,
+      "numero_lote": "LOT-4-20261022161310",
+      "cantidad_disponible": 1,
+      "fecha_vencimiento": "2026-10-25T00:00:00",
+      "fecha_ingreso": "2026-10-22T16:13:10.142958"
+    }
+  ],
+  "ventas": [
+    {
+      "id": 1,
+      "fecha_venta": "2026-10-22T15:55:22.351113",
+      "total_pagado": 10360.0,
+      "subtotal": 14800.0,
+      "descuento_total": 4440.0,
+      "detalles": [
+        {
+          "id": 1,
+          "venta_id": 1,
+          "lote_id": 1,
+          "cantidad": 2,
+          "precio_unitario": 2240.0,
+          "subtotal": 4480.0,
+          "descuento_aplicado": true
+        },
+        {
+          "id": 2,
+          "venta_id": 1,
+          "lote_id": 2,
+          "cantidad": 6,
+          "precio_unitario": 980.0,
+          "subtotal": 5880.0,
+          "descuento_aplicado": true
+        }
+      ]
+    },
+    {
+      "id": 2,
+      "fecha_venta": "2026-10-22T16:20:06.498030",
+      "total_pagado": 2240.0,
+      "subtotal": 3200.0,
+      "descuento_total": 960.0,
+      "detalles": [
+        {
+          "id": 3,
+          "venta_id": 2,
+          "lote_id": 1,
+          "cantidad": 1,
+          "precio_unitario": 2240.0,
+          "subtotal": 2240.0,
+          "descuento_aplicado": true
+        }
+      ]
+    }
+  ],
+  "mermas": [],
+  "next_ids": {
+    "producto": 5,
+    "lote": 6,
+    "venta": 3,
+    "merma": 1,
+    "detalle_venta": 4
+  }
+}
